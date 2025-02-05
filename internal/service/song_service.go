@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/DobryySoul/test-task/internal/models"
-	"github.com/DobryySoul/test-task/internal/storage/postgres"
+	"github.com/DobryySoul/test-task/internal/repo/postgres"
 )
 
 type SongService struct {
@@ -19,8 +19,8 @@ func (s *SongService) CreateSong(song *models.Song) error {
 	return s.repo.CreateSong(song)
 }
 
-func (s *SongService) GetSongByID(id int) (*models.Song, error) {
-	return s.repo.GetByID(id)
+func (s *SongService) GetByGroupAndSongName(group, songName string) (*models.Song, error) {
+	return s.repo.GetByGroupAndSongName(group, songName)
 }
 
 func (s *SongService) UpdateSong(song *models.Song, ID int) error {
@@ -29,6 +29,10 @@ func (s *SongService) UpdateSong(song *models.Song, ID int) error {
 
 func (s *SongService) Delete(id int) error {
 	return s.repo.Delete(id)
+}
+
+func (s *SongService) GetSongByID(id int) (*models.Song, error) {
+	return s.repo.GetByID(id)
 }
 
 func (s *SongService) GetSongText(id int) ([]string, error) {
