@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -8,33 +9,31 @@ import (
 )
 
 type Config struct {
-	Port           int
-	DBHost         string
-	DBPort         int
-	DBUser         string
-	DBPassword     string
-	DBName         string
-	MigrationsPath string
-	APIURL         string
+	Port       int
+	DBHost     string
+	DBPort     int
+	DBUser     string
+	DBPassword string
+	DBName     string
+	// APIURL         string
 }
 
 func LoadConfig() (*Config, error) {
-	err := godotenv.Load("C:/Users/posei/test-task/.env")
+	err := godotenv.Load("../.env")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load environment variables: %v", err)
 	}
 
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT"))
 
 	return &Config{
-		Port:           port,
-		DBHost:         os.Getenv("DB_HOST"),
-		DBPort:         dbPort,
-		DBUser:         os.Getenv("DB_USER"),
-		DBPassword:     os.Getenv("DB_PASSWORD"),
-		DBName:         os.Getenv("DB_NAME"),
-		MigrationsPath: os.Getenv("MIGRATIONS_PATH"),
-		APIURL:         os.Getenv("API_URL"),
+		Port:       port,
+		DBHost:     os.Getenv("DB_HOST"),
+		DBPort:     dbPort,
+		DBUser:     os.Getenv("DB_USER"),
+		DBPassword: os.Getenv("DB_PASSWORD"),
+		DBName:     os.Getenv("DB_NAME"),
+		// APIURL:         os.Getenv("API_URL"),
 	}, nil
 }
