@@ -1,0 +1,8 @@
+http:
+  port: '8080'
+
+logger:
+  level: 'debug'
+
+postgres:
+  pg_url: 'postgres://postgres:54321@postgres:5432/musiclibrary'

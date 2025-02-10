@@ -1,0 +1,29 @@
+services:
+  postgres:
+    container_name: postgres_music
+    image: postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "54321"
+      POSTGRES_DB: "musiclibrary"
+    ports:
+      - 5432:5432
+
+  app:
+    build: .
+    container_name: app
+    image: app
+    environment:
+      PG_URL: "postgres://postgres:54321@postgres:5432/postgres"
+    ports:
+      - 8080:8080
+      - 44044:44044
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+
+volumes:
+  pg-data:

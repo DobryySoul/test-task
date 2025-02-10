@@ -2,7 +2,6 @@ package app
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 
 	"github.com/DobryySoul/test-task/config"
@@ -10,7 +9,7 @@ import (
 	"github.com/DobryySoul/test-task/internal/repo/postgres"
 	"github.com/DobryySoul/test-task/internal/service"
 	"github.com/DobryySoul/test-task/pkg/logger"
-	
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,10 +17,7 @@ func Run(cfg *config.Config) {
 	log := logger.New()
 	log.Info("Initializing application")
 
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
-
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("postgres", cfg.PG.URL)
 	if err != nil {
 		log.Fatalf("Database connection error: %v", err)
 	}
@@ -40,9 +36,9 @@ func Run(cfg *config.Config) {
 
 	routes.NewRouter(h, service)
 
-	log.Infof("Starting server on port %d", cfg.Port)
+	log.Infof("Starting server on port %s", cfg.Port)
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), h); err != nil {
+	if err := http.ListenAndServe("localhost:"+cfg.Port, h); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }

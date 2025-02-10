@@ -2,11 +2,9 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	// migrate tools
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -14,36 +12,27 @@ import (
 )
 
 func init() {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Fatalf("failed to load environment variables: %v", err)
+	databaseURL := os.Getenv("PG_URL")
+	if databaseURL == "" {
+		log.Fatalf("failed to migrate database: PG_URL not found")
 	}
-	DBUser := os.Getenv("DB_USER")
-	DBPassword := os.Getenv("DB_PASSWORD")
-	DBPORT := os.Getenv("DB_PORT")
-	DBHost := os.Getenv("DB_HOST")
-	DBName := os.Getenv("DB_NAME")
-	fmt.Println(DBUser, DBPassword, DBPORT, DBHost, DBName)
-	connURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		DBUser, DBPassword, DBHost, DBPORT, DBName)
 
-	m, err := migrate.New("file://../migrations", connURL)
+	m, err := migrate.New("file://migrations", databaseURL+"?sslmode=disable")
 	if err != nil {
 		log.Fatalf("Migration initialization failed: %v", err)
 	}
 
-	err = m.Up()
-
 	defer m.Close()
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+
+	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		log.Fatalf("Migrate: up error: %s", err)
 	}
 
 	if errors.Is(err, migrate.ErrNoChange) {
-		log.Printf("Migrate: no change")
+		log.Println("Migrate: no change")
 
 		return
 	}
 
-	log.Printf("Migrate: up success")
+	log.Println("Migrate: up success")
 }
