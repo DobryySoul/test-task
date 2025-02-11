@@ -50,7 +50,6 @@ func NewRouter(h *gin.Engine, serv *service.SongService) {
 
 	// swagger
 	h.GET("docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
 	// Получение данных библиотеки с фильтрацией по всем полям и пагинацией
 	h.GET("/songs-with-filter", r.GetSongs)
 	// Получение текста песни с пагинацией по куплетам
@@ -259,6 +258,7 @@ func (sh *SongHandler) GetSongText(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid song ID"})
+
 		return
 	}
 
@@ -267,6 +267,7 @@ func (sh *SongHandler) GetSongText(c *gin.Context) {
 
 	if page < 1 || limit < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid pagination parameters"})
+
 		return
 	}
 
@@ -277,6 +278,7 @@ func (sh *SongHandler) GetSongText(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
+
 		return
 	}
 
@@ -321,11 +323,13 @@ func (sh *SongHandler) GetSongs(c *gin.Context) {
 
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid query parameters"})
+
 		return
 	}
 
 	if err := c.ShouldBindQuery(&pagination); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid pagination parameters"})
+
 		return
 	}
 
@@ -333,6 +337,7 @@ func (sh *SongHandler) GetSongs(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error: "Validation error: " + err.Error(),
 		})
+
 		return
 	}
 
@@ -341,6 +346,7 @@ func (sh *SongHandler) GetSongs(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error: "Failed to retrieve songs",
 		})
+
 		return
 	}
 
