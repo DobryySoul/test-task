@@ -15,7 +15,7 @@ func NewSongService(repo *postgres.SongRepository) *SongService {
 	return &SongService{repo: repo}
 }
 
-func (s *SongService) CreateSong(song *models.Song) error {
+func (s *SongService) CreateSong(song *models.CreateSongInput) error {
 	return s.repo.CreateSong(song)
 }
 
@@ -25,6 +25,10 @@ func (s *SongService) GetByGroupAndSongName(group, songName string) (*models.Son
 
 func (s *SongService) UpdateSong(song *models.Song, ID int) error {
 	return s.repo.UpdateSong(song, ID)
+}
+
+func (s *SongService) UpdateFieldSong(updateField *models.UpdateSongInput, song *models.Song) error {
+	return s.repo.UpdateFieldSong(updateField, song)
 }
 
 func (s *SongService) Delete(id int) error {

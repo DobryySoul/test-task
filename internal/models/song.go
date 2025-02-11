@@ -11,6 +11,22 @@ type Song struct {
 	Link        string `json:"link"`
 }
 
+type CreateSongInput struct {
+	Group       string `json:"group" binding:"required`
+	Song        string `json:"song" binding:"required`
+	ReleaseDate string `json:"releaseDate" binding:"required`
+	Text        string `json:"text" binding:"required`
+	Link        string `json:"link" binding:"required`
+}
+
+type UpdateSongInput struct {
+	Group       string `json:"group"`
+	Song        string `json:"song"`
+	ReleaseDate string `json:"releaseDate"`
+	Text        string `json:"text"`
+	Link        string `json:"link"`
+}
+
 // SongsResponse model info
 // @Description Ответ со списком песен и пагинацией
 type SongsResponse struct {

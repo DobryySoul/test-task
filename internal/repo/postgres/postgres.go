@@ -25,7 +25,8 @@ func NewSongRepository(db *sql.DB, log logger.Logger) *SongRepository {
 
 var ErrNotFound = errors.New("record not found")
 
-func (s *SongRepository) CreateSong(song *models.Song) error {
+func (s *SongRepository) CreateSong(song *models.CreateSongInput) error {
+
 	query := `
 		INSERT INTO songs(group_name, song_name, release_date, text, link)
 		VALUES($1, $2, $3, $4, $5) RETURNING id
@@ -35,6 +36,7 @@ func (s *SongRepository) CreateSong(song *models.Song) error {
 	start := time.Now()
 
 	var id int
+
 	err := s.db.QueryRow(query,
 		song.Group,
 		song.Song,
@@ -161,6 +163,77 @@ func (s *SongRepository) GetByID(id int) (*models.Song, error) {
 	return &song, nil
 }
 
+func (s *SongRepository) UpdateFieldSong(updateField *models.UpdateSongInput, song *models.Song) error {
+	const methodName = "UpdateFieldSong"
+
+	s.logger.Debugf("%s: начало обновления поля песни по ID: %d", methodName, updateField)
+	startTime := time.Now()
+
+	query := `UPDATE songs 
+             SET group_name = $1, 
+                 song_name = $2, 
+                 release_date = $3, 
+                 text = $4, 
+                 link = $5 
+             WHERE id = $6`
+
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		s.logger.Errorf("%s: ошибка в подготовке stmt: %v", methodName, err)
+
+		return fmt.Errorf("%s: ошибка в подготовке stmt: %w", methodName, err)
+	}
+	defer func() {
+		if closeErr := stmt.Close(); closeErr != nil {
+			s.logger.Errorf("%s: ошибка закрытия stmt: %v", methodName, closeErr)
+		}
+	}()
+
+	s.logger.Debugf("%s: параметры обновления - Группа: '%s', Песня: '%s', Дата: %s, Ссылка: %s",
+		methodName,
+		updateField.Group,
+		updateField.Song,
+		updateField.ReleaseDate,
+		updateField.Link,
+	)
+
+	switch {
+	case updateField.Group != "":
+		song.Group = updateField.Group
+	case updateField.Song != "":
+		song.Song = updateField.Song
+	case updateField.ReleaseDate != "":
+		song.ReleaseDate = updateField.ReleaseDate
+	case updateField.Text != "":
+		song.Text = updateField.Text
+	case updateField.Link != "":
+		song.Link = updateField.Link
+	}
+
+	_, err = stmt.Exec(
+		song.Group,
+		song.Song,
+		song.ReleaseDate,
+		song.Text,
+		song.Link,
+		song.ID,
+	)
+
+	if err != nil {
+		s.logger.Errorf("%s: не удалось обновить данные, запрос: %v", methodName, err)
+
+		return fmt.Errorf("%s: ошибка при выполнении запроса: %w", methodName, err)
+	}
+
+	s.logger.Infof("%s: успешное выполнение запроса - ID: %d, Group: %s, Song: %s (took %v)",
+		methodName,
+		updateField.Group,
+		updateField.Song,
+		time.Since(startTime))
+
+	return nil
+}
+
 func (s *SongRepository) UpdateSong(song *models.Song, ID int) error {
 	const methodName = "UpdateSong"
 
@@ -252,6 +325,7 @@ func (s *SongRepository) Delete(id int) error {
 
 func (s *SongRepository) GetAll(filter models.SongFilter, pagination models.Pagination) ([]models.Song, int, error) {
 	const methodName = "GetAll"
+
 	startTime := time.Now()
 
 	s.logger.Debugf("%s: начало выполнения. Фильтр: %+v, Пагинация: %+v",

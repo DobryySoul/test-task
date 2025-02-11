@@ -17,7 +17,7 @@ func init() {
 		log.Fatalf("failed to migrate database: PG_URL not found")
 	}
 
-	m, err := migrate.New("file://migrations", databaseURL+"?sslmode=disable")
+	m, err := migrate.New("file://migrations", databaseURL)
 	if err != nil {
 		log.Fatalf("Migration initialization failed: %v", err)
 	}

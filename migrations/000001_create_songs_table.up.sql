@@ -3,7 +3,7 @@ CREATE TABLE
         id SERIAL PRIMARY KEY,
         group_name VARCHAR(255) NOT NULL,
         song_name VARCHAR(255) NOT NULL,
-        release_date VARCHAR(50),
+        release_date timestamp,
         text TEXT,
         link VARCHAR(255)
     );

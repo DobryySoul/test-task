@@ -59,6 +59,8 @@ func NewRouter(h *gin.Engine, serv *service.SongService) {
 	h.DELETE("/delete-song/:id", r.DeleteSong)
 	// Изменение данных песни
 	h.PUT("/update-song/:id", r.UpdateSong)
+	// Частичное изменение данных песни по ID
+	h.PATCH("/update-song/:id", r.UpdateFieldSong)
 	// Добавление новой песни в формате JSON
 	h.POST("/create-song", r.CreateSong)
 	// метод из АПИ
@@ -78,7 +80,7 @@ func NewRouter(h *gin.Engine, serv *service.SongService) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /create-song [post]
 func (sh *SongHandler) CreateSong(c *gin.Context) {
-	var song models.Song
+	var song models.CreateSongInput
 
 	if err := c.ShouldBindJSON(&song); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -92,7 +94,7 @@ func (sh *SongHandler) CreateSong(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "song sucssesfully created"})
+	c.JSON(http.StatusOK, gin.H{"created data": song})
 }
 
 // SongHandler godoc
@@ -169,6 +171,42 @@ func (sh *SongHandler) UpdateSong(c *gin.Context) {
 	c.JSON(http.StatusOK, song)
 }
 
+func (sh *SongHandler) UpdateFieldSong(c *gin.Context) {
+	var song *models.Song
+
+	ID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	song, err = sh.service.GetSongByID(ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	var UpdateFieldSong *models.UpdateSongInput
+
+	if err := c.ShouldBindJSON(&UpdateFieldSong); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	err = sh.service.UpdateFieldSong(UpdateFieldSong, song)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"update data song": song})
+
+}
+
 // SongHandler godoc
 // @Summary Удалить песню
 // @Description Удаляет запись песни по ID
@@ -187,6 +225,13 @@ func (sh *SongHandler) DeleteSong(c *gin.Context) {
 		return
 	}
 
+	song, err := sh.service.GetSongByID(ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
 	err = sh.service.Delete(ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -194,7 +239,7 @@ func (sh *SongHandler) DeleteSong(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "song deleted"})
+	c.JSON(http.StatusOK, gin.H{"message": "song deleted", "song": song.Song})
 }
 
 // SongHandler godoc
