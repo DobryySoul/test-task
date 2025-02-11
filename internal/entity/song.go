@@ -1,4 +1,4 @@
-package models
+package entity
 
 // Song model info
 // @Description Информация о песне

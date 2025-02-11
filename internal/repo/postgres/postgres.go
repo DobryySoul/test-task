@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DobryySoul/test-task/internal/models"
+	"github.com/DobryySoul/test-task/internal/entity"
 	"github.com/DobryySoul/test-task/pkg/logger"
 )
 
@@ -25,7 +25,7 @@ func NewSongRepository(db *sql.DB, log logger.Logger) *SongRepository {
 
 var ErrNotFound = errors.New("record not found")
 
-func (s *SongRepository) CreateSong(song *models.CreateSongInput) error {
+func (s *SongRepository) CreateSong(song *entity.CreateSongInput) error {
 
 	query := `
 		INSERT INTO songs(group_name, song_name, release_date, text, link)
@@ -56,12 +56,12 @@ func (s *SongRepository) CreateSong(song *models.CreateSongInput) error {
 	return nil
 }
 
-func (s *SongRepository) GetByGroupAndSongName(group, songName string) (*models.Song, error) {
+func (s *SongRepository) GetByGroupAndSongName(group, songName string) (*entity.Song, error) {
 	const methodName = "GetByGroupAndSongName"
 
 	startTime := time.Now()
 
-	var song models.Song
+	var song entity.Song
 	query := "SELECT id, group_name, song_name, release_date, text, link FROM songs WHERE group_name = $1 AND song_name = $2"
 
 	stmt, err := s.db.Prepare(query)
@@ -110,13 +110,13 @@ func (s *SongRepository) GetByGroupAndSongName(group, songName string) (*models.
 	return &song, nil
 }
 
-func (s *SongRepository) GetByID(id int) (*models.Song, error) {
+func (s *SongRepository) GetByID(id int) (*entity.Song, error) {
 	const methodName = "GetByID"
 
 	s.logger.Debugf("%s: началось выполнение запроса по ID: %d", methodName, id)
 	startTime := time.Now()
 
-	var song models.Song
+	var song entity.Song
 	query := "SELECT id, group_name, song_name, release_date, text, link FROM songs WHERE id = $1"
 
 	stmt, err := s.db.Prepare(query)
@@ -163,7 +163,7 @@ func (s *SongRepository) GetByID(id int) (*models.Song, error) {
 	return &song, nil
 }
 
-func (s *SongRepository) UpdateFieldSong(updateField *models.UpdateSongInput, song *models.Song) error {
+func (s *SongRepository) UpdateFieldSong(updateField *entity.UpdateSongInput, song *entity.Song) error {
 	const methodName = "UpdateFieldSong"
 
 	s.logger.Debugf("%s: начало обновления поля песни по ID: %d", methodName, updateField)
@@ -234,7 +234,7 @@ func (s *SongRepository) UpdateFieldSong(updateField *models.UpdateSongInput, so
 	return nil
 }
 
-func (s *SongRepository) UpdateSong(song *models.Song, ID int) error {
+func (s *SongRepository) UpdateSong(song *entity.Song, ID int) error {
 	const methodName = "UpdateSong"
 
 	s.logger.Debugf("%s: начало обновления песни ID: %d", methodName, ID)
@@ -323,7 +323,7 @@ func (s *SongRepository) Delete(id int) error {
 	return nil
 }
 
-func (s *SongRepository) GetAllSongs(filter models.SongFilter, pagination models.Pagination) ([]models.Song, int, error) {
+func (s *SongRepository) GetAllSongs(filter entity.SongFilter, pagination entity.Pagination) ([]entity.Song, int, error) {
 	const methodName = "GetAll"
 
 	startTime := time.Now()
@@ -403,10 +403,10 @@ func (s *SongRepository) GetAllSongs(filter models.SongFilter, pagination models
 		}
 	}()
 
-	var songs []models.Song
+	var songs []entity.Song
 
 	for rows.Next() {
-		var song models.Song
+		var song entity.Song
 		err := rows.Scan(
 			&song.ID,
 			&song.Group,

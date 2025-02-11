@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/DobryySoul/test-task/internal/models"
+	"github.com/DobryySoul/test-task/internal/entity"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -19,14 +19,14 @@ import (
 )
 
 type SongService interface {
-	CreateSong(song *models.CreateSongInput) error
-	GetByGroupAndSongName(group, songName string) (*models.Song, error)
-	UpdateSong(song *models.Song, ID int) error
-	UpdateFieldSong(updateField *models.UpdateSongInput, song *models.Song) error
+	CreateSong(song *entity.CreateSongInput) error
+	GetByGroupAndSongName(group, songName string) (*entity.Song, error)
+	UpdateSong(song *entity.Song, ID int) error
+	UpdateFieldSong(updateField *entity.UpdateSongInput, song *entity.Song) error
 	Delete(id int) error
-	GetSongByID(id int) (*models.Song, error)
+	GetSongByID(id int) (*entity.Song, error)
 	GetSongText(id int) ([]string, error)
-	GetAllSongs(filter models.SongFilter, pagination models.Pagination) ([]models.Song, int, error)
+	GetAllSongs(filter entity.SongFilter, pagination entity.Pagination) ([]entity.Song, int, error)
 }
 
 type SongHandler struct {
@@ -83,13 +83,13 @@ func NewRouter(h *gin.Engine, serv SongService) {
 // @Tags songs
 // @Accept  json
 // @Produce  json
-// @Param song body models.Song true "Данные песни"
+// @Param song body entity.Song true "Данные песни"
 // @Success 200 {object} map[string]string
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Failure 400 {object} entity.ErrorResponse
+// @Failure 500 {object} entity.ErrorResponse
 // @Router /create-song [post]
 func (sh *SongHandler) CreateSong(c *gin.Context) {
-	var song models.CreateSongInput
+	var song entity.CreateSongInput
 
 	if err := c.ShouldBindJSON(&song); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -113,12 +113,12 @@ func (sh *SongHandler) CreateSong(c *gin.Context) {
 // @Produce  json
 // @Param group query string true "Название группы"
 // @Param song query string true "Название песни"
-// @Success 200 {object} models.GetSongResponse
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Success 200 {object} entity.GetSongResponse
+// @Failure 400 {object} entity.ErrorResponse
+// @Failure 500 {object} entity.ErrorResponse
 // @Router /info [get]
 func (sh *SongHandler) GetSongByQuery(c *gin.Context) {
-	var response models.GetSongResponse
+	var response entity.GetSongResponse
 
 	group := c.Query("group")
 	songName := c.Query("song")
@@ -149,13 +149,13 @@ func (sh *SongHandler) GetSongByQuery(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "ID песни"
-// @Param song body models.Song true "Обновленные данные песни"
-// @Success 200 {object} models.Song
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Param song body entity.Song true "Обновленные данные песни"
+// @Success 200 {object} entity.Song
+// @Failure 400 {object} entity.ErrorResponse
+// @Failure 500 {object} entity.ErrorResponse
 // @Router /update-song/{id} [put]
 func (sh *SongHandler) UpdateSong(c *gin.Context) {
-	var song models.Song
+	var song entity.Song
 
 	ID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -181,7 +181,7 @@ func (sh *SongHandler) UpdateSong(c *gin.Context) {
 }
 
 func (sh *SongHandler) UpdateFieldSong(c *gin.Context) {
-	var song *models.Song
+	var song *entity.Song
 
 	ID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -197,7 +197,7 @@ func (sh *SongHandler) UpdateFieldSong(c *gin.Context) {
 		return
 	}
 
-	var UpdateFieldSong *models.UpdateSongInput
+	var UpdateFieldSong *entity.UpdateSongInput
 
 	if err := c.ShouldBindJSON(&UpdateFieldSong); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -223,8 +223,8 @@ func (sh *SongHandler) UpdateFieldSong(c *gin.Context) {
 // @Produce  json
 // @Param id path int true "ID песни"
 // @Success 200 {object} map[string]string
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Failure 400 {object} entity.ErrorResponse
+// @Failure 500 {object} entity.ErrorResponse
 // @Router /delete-song/{id} [delete]
 func (sh *SongHandler) DeleteSong(c *gin.Context) {
 	ID, err := strconv.Atoi(c.Param("id"))
@@ -260,9 +260,9 @@ func (sh *SongHandler) DeleteSong(c *gin.Context) {
 // @Param page query int false "Номер страницы" default(1)
 // @Param limit query int false "Лимит элементов на странице" default(2)
 // @Success 200 {object} map[string]interface{} "Пример ответа: {"song": "название", "verses": [...]}"
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 404 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Failure 400 {object} entity.ErrorResponse
+// @Failure 404 {object} entity.ErrorResponse
+// @Failure 500 {object} entity.ErrorResponse
 // @Router /song-text/{id}/text [get]
 func (sh *SongHandler) GetSongText(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
@@ -323,28 +323,28 @@ func (sh *SongHandler) GetSongText(c *gin.Context) {
 // @Param link query string false "Фильтр по ссылке"
 // @Param page query int false "Номер страницы" default(1)
 // @Param limit query int false "Лимит элементов на странице" default(10)
-// @Success 200 {object} models.SongsResponse
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Success 200 {object} entity.SongsResponse
+// @Failure 400 {object} entity.ErrorResponse
+// @Failure 500 {object} entity.ErrorResponse
 // @Router /songs-with-filter [get]
 func (sh *SongHandler) GetSongs(c *gin.Context) {
-	var filter models.SongFilter
-	var pagination models.Pagination
+	var filter entity.SongFilter
+	var pagination entity.Pagination
 
 	if err := c.ShouldBindQuery(&filter); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid query parameters"})
+		c.JSON(http.StatusBadRequest, entity.ErrorResponse{Error: "Invalid query parameters"})
 
 		return
 	}
 
 	if err := c.ShouldBindQuery(&pagination); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid pagination parameters"})
+		c.JSON(http.StatusBadRequest, entity.ErrorResponse{Error: "Invalid pagination parameters"})
 
 		return
 	}
 
 	if err := sh.validator.Struct(pagination); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+		c.JSON(http.StatusBadRequest, entity.ErrorResponse{
 			Error: "Validation error: " + err.Error(),
 		})
 
@@ -353,7 +353,7 @@ func (sh *SongHandler) GetSongs(c *gin.Context) {
 
 	songs, totalItems, err := sh.service.GetAllSongs(filter, pagination)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+		c.JSON(http.StatusInternalServerError, entity.ErrorResponse{
 			Error: "Failed to retrieve songs",
 		})
 
@@ -365,7 +365,7 @@ func (sh *SongHandler) GetSongs(c *gin.Context) {
 		totalPages++
 	}
 
-	response := models.SongsResponse{
+	response := entity.SongsResponse{
 		Data:       songs,
 		Page:       pagination.Page,
 		TotalPages: totalPages,
