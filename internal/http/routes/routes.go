@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/DobryySoul/test-task/internal/models"
-	"github.com/DobryySoul/test-task/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -19,12 +18,23 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+type SongService interface {
+	CreateSong(song *models.CreateSongInput) error
+	GetByGroupAndSongName(group, songName string) (*models.Song, error)
+	UpdateSong(song *models.Song, ID int) error
+	UpdateFieldSong(updateField *models.UpdateSongInput, song *models.Song) error
+	Delete(id int) error
+	GetSongByID(id int) (*models.Song, error)
+	GetSongText(id int) ([]string, error)
+	GetAllSongs(filter models.SongFilter, pagination models.Pagination) ([]models.Song, int, error)
+}
+
 type SongHandler struct {
-	service   *service.SongService
+	service   SongService
 	validator *validator.Validate
 }
 
-func NewRouter(h *gin.Engine, serv *service.SongService) {
+func NewRouter(h *gin.Engine, serv SongService) {
 	r := SongHandler{service: serv, validator: validator.New()}
 
 	h.Use(gin.LoggerWithConfig(gin.LoggerConfig{

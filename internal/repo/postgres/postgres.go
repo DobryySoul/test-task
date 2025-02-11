@@ -323,7 +323,7 @@ func (s *SongRepository) Delete(id int) error {
 	return nil
 }
 
-func (s *SongRepository) GetAll(filter models.SongFilter, pagination models.Pagination) ([]models.Song, int, error) {
+func (s *SongRepository) GetAllSongs(filter models.SongFilter, pagination models.Pagination) ([]models.Song, int, error) {
 	const methodName = "GetAll"
 
 	startTime := time.Now()

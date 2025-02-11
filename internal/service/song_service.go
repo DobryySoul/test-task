@@ -4,14 +4,23 @@ import (
 	"strings"
 
 	"github.com/DobryySoul/test-task/internal/models"
-	"github.com/DobryySoul/test-task/internal/repo/postgres"
 )
 
-type SongService struct {
-	repo *postgres.SongRepository
+type SongRepository interface {
+	CreateSong(song *models.CreateSongInput) error
+	GetByGroupAndSongName(group, songName string) (*models.Song, error)
+	UpdateSong(song *models.Song, ID int) error
+	UpdateFieldSong(updateField *models.UpdateSongInput, song *models.Song) error
+	Delete(id int) error
+	GetByID(id int) (*models.Song, error)
+	GetAllSongs(filter models.SongFilter, pagination models.Pagination) ([]models.Song, int, error)
 }
 
-func NewSongService(repo *postgres.SongRepository) *SongService {
+type SongService struct {
+	repo SongRepository
+}
+
+func NewSongService(repo SongRepository) *SongService {
 	return &SongService{repo: repo}
 }
 
@@ -50,5 +59,5 @@ func (s *SongService) GetSongText(id int) ([]string, error) {
 }
 
 func (s *SongService) GetAllSongs(filter models.SongFilter, pagination models.Pagination) ([]models.Song, int, error) {
-	return s.repo.GetAll(filter, pagination)
+	return s.repo.GetAllSongs(filter, pagination)
 }
