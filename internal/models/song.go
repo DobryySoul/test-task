@@ -11,6 +11,8 @@ type Song struct {
 	Link        string `json:"link"`
 }
 
+// CreateSongInput model info
+// @Description Информация о песне после создания
 type CreateSongInput struct {
 	Group       string `json:"group" binding:"required`
 	Song        string `json:"song" binding:"required`
@@ -19,6 +21,8 @@ type CreateSongInput struct {
 	Link        string `json:"link" binding:"required`
 }
 
+// UpdateSongInput model info
+// @Description Изменение параметра существующей песни
 type UpdateSongInput struct {
 	Group       string `json:"group"`
 	Song        string `json:"song"`
