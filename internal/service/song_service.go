@@ -6,58 +6,58 @@ import (
 	"github.com/DobryySoul/test-task/internal/entity"
 )
 
-type SongRepository interface {
+type Repository interface {
 	CreateSong(song *entity.CreateSongInput) error
 	GetByGroupAndSongName(group, songName string) (*entity.Song, error)
-	UpdateSong(song *entity.Song, ID int) error
+	// UpdateSong(song *entity.Song, ID int) error
 	UpdateFieldSong(updateField *entity.UpdateSongInput, song *entity.Song) error
 	Delete(id int) error
 	GetByID(id int) (*entity.Song, error)
 	GetAllSongs(filter entity.SongFilter, pagination entity.Pagination) ([]entity.Song, int, error)
 }
 
-type SongService struct {
-	repo SongRepository
+type Service struct {
+	repo Repository
 }
 
-func NewSongService(repo SongRepository) *SongService {
-	return &SongService{repo: repo}
+func NewSongService(repo Repository) *Service {
+	return &Service{repo: repo}
 }
 
-func (s *SongService) CreateSong(song *entity.CreateSongInput) error {
+func (s *Service) CreateSong(song *entity.CreateSongInput) error {
 	return s.repo.CreateSong(song)
 }
 
-func (s *SongService) GetByGroupAndSongName(group, songName string) (*entity.Song, error) {
+func (s *Service) GetByGroupAndSongName(group, songName string) (*entity.Song, error) {
 	return s.repo.GetByGroupAndSongName(group, songName)
 }
 
-func (s *SongService) UpdateSong(song *entity.Song, ID int) error {
-	return s.repo.UpdateSong(song, ID)
-}
+// func (s *Service) UpdateSong(song *entity.Song, ID int) error {
+// 	return s.repo.UpdateSong(song, ID)
+// }
 
-func (s *SongService) UpdateFieldSong(updateField *entity.UpdateSongInput, song *entity.Song) error {
+func (s *Service) UpdateFieldSong(updateField *entity.UpdateSongInput, song *entity.Song) error {
 	return s.repo.UpdateFieldSong(updateField, song)
 }
 
-func (s *SongService) Delete(id int) error {
+func (s *Service) Delete(id int) error {
 	return s.repo.Delete(id)
 }
 
-func (s *SongService) GetSongByID(id int) (*entity.Song, error) {
+func (s *Service) GetSongByID(id int) (*entity.Song, error) {
 	return s.repo.GetByID(id)
 }
 
-func (s *SongService) GetSongText(id int) ([]string, error) {
+func (s *Service) GetSongText(id int) ([]string, error) {
 	song, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	verses := strings.Split(song.Text, "\n")
+	verses := strings.Split(song.SongText, "\n")
 	return verses, nil
 }
 
-func (s *SongService) GetAllSongs(filter entity.SongFilter, pagination entity.Pagination) ([]entity.Song, int, error) {
+func (s *Service) GetAllSongs(filter entity.SongFilter, pagination entity.Pagination) ([]entity.Song, int, error) {
 	return s.repo.GetAllSongs(filter, pagination)
 }

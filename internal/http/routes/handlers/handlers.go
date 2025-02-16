@@ -1,27 +1,19 @@
-package routes
+package handlers
 
 import (
 	"database/sql"
-	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/DobryySoul/test-task/internal/entity"
-
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-
-	// swagger
-	_ "github.com/DobryySoul/test-task/docs"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-type SongService interface {
+type Service interface {
 	CreateSong(song *entity.CreateSongInput) error
 	GetByGroupAndSongName(group, songName string) (*entity.Song, error)
-	UpdateSong(song *entity.Song, ID int) error
+	// UpdateSong(song *entity.Song, ID int) error
 	UpdateFieldSong(updateField *entity.UpdateSongInput, song *entity.Song) error
 	Delete(id int) error
 	GetSongByID(id int) (*entity.Song, error)
@@ -29,66 +21,20 @@ type SongService interface {
 	GetAllSongs(filter entity.SongFilter, pagination entity.Pagination) ([]entity.Song, int, error)
 }
 
-type SongHandler struct {
-	service   SongService
-	validator *validator.Validate
+type Handler struct {
+	service   Service
+	validator validator.Validate
+	// log       *logger.Logger // implement logger in handle func
 }
 
-func NewRouter(h *gin.Engine, serv SongService) {
-	r := SongHandler{service: serv, validator: validator.New()}
-
-	h.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		Output: log.Writer(),
-		Formatter: func(param gin.LogFormatterParams) string {
-			return fmt.Sprintf("[GIN] %s |%s %d %s| %s |%s %s %s %s %s %s\n",
-				param.TimeStamp.Format("2006/01/02 - 15:04:05"),
-				param.StatusCodeColor(),
-				param.StatusCode,
-				param.ResetColor(),
-				param.ClientIP,
-				param.MethodColor(),
-				param.Method,
-				param.ResetColor(),
-				param.Path,
-				param.Request.UserAgent(),
-				param.Path,
-			)
-		},
-	}))
-
-	h.Use(gin.Recovery())
-
-	// swagger
-	h.GET("docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	// Получение данных библиотеки с фильтрацией по всем полям и пагинацией
-	h.GET("/songs-with-filter", r.GetSongs)
-	// Получение текста песни с пагинацией по куплетам
-	h.GET("/song-text/:id/text", r.GetSongText)
-	// Удаление песни по ID
-	h.DELETE("/delete-song/:id", r.DeleteSong)
-	// Изменение данных песни
-	h.PUT("/update-song/:id", r.UpdateSong)
-	// Частичное изменение данных песни по ID
-	h.PATCH("/update-song/:id", r.UpdateFieldSong)
-	// Добавление новой песни в формате JSON
-	h.POST("/create-song", r.CreateSong)
-	// метод из АПИ
-	h.GET("/info", r.GetSongByQuery)
-
+func NewHandler(service Service, validator validator.Validate) *Handler {
+	return &Handler{
+		service:   service,
+		validator: validator,
+	}
 }
 
-// SongHandler godoc
-// @Summary Создать новую песню
-// @Description Создает новую запись песни
-// @Tags songs
-// @Accept  json
-// @Produce  json
-// @Param song body entity.Song true "Данные песни"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} entity.ErrorResponse
-// @Failure 500 {object} entity.ErrorResponse
-// @Router /create-song [post]
-func (sh *SongHandler) CreateSong(c *gin.Context) {
+func (h *Handler) CreateSong(c *gin.Context) {
 	var song entity.CreateSongInput
 
 	if err := c.ShouldBindJSON(&song); err != nil {
@@ -97,7 +43,7 @@ func (sh *SongHandler) CreateSong(c *gin.Context) {
 		return
 	}
 
-	if err := sh.service.CreateSong(&song); err != nil {
+	if err := h.service.CreateSong(&song); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
@@ -106,7 +52,7 @@ func (sh *SongHandler) CreateSong(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"created data": song})
 }
 
-// SongHandler godoc
+// Handler godoc
 // @Summary Получить песню по группе и названию
 // @Description Возвращает информацию о песне по группе и названию
 // @Tags songs
@@ -117,7 +63,7 @@ func (sh *SongHandler) CreateSong(c *gin.Context) {
 // @Failure 400 {object} entity.ErrorResponse
 // @Failure 500 {object} entity.ErrorResponse
 // @Router /info [get]
-func (sh *SongHandler) GetSongByQuery(c *gin.Context) {
+func (h *Handler) GetSongByQuery(c *gin.Context) {
 	var response entity.GetSongResponse
 
 	group := c.Query("group")
@@ -128,69 +74,74 @@ func (sh *SongHandler) GetSongByQuery(c *gin.Context) {
 		return
 	}
 
-	song, err := sh.service.GetByGroupAndSongName(group, songName)
+	song, err := h.service.GetByGroupAndSongName(group, songName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
 	}
-
-	response.ReleaseDate = song.ReleaseDate
-	response.Text = song.Text
-	response.Link = song.Link
+	response = entity.GetSongResponse{
+		SongName:    song.SongName,
+		Group:       group,
+		ReleaseDate: song.ReleaseDate,
+		Text:        song.SongText,
+		Link:        song.Link,
+	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-// SongHandler godoc
-// @Summary Обновить песню
-// @Description Обновляет существующую запись песни
-// @Tags songs
-// @Accept  json
-// @Produce  json
-// @Param id path int true "ID песни"
-// @Param song body entity.Song true "Обновленные данные песни"
-// @Success 200 {object} entity.Song
-// @Failure 400 {object} entity.ErrorResponse
-// @Failure 500 {object} entity.ErrorResponse
-// @Router /update-song/{id} [put]
-func (sh *SongHandler) UpdateSong(c *gin.Context) {
-	var song entity.Song
+// // Handler godoc
+// // @Summary Обновить песню
+// // @Description Обновляет существующую запись песни
+// // @Tags songs
+// // @Accept  json
+// // @Produce  json
+// // @Param id path int true "ID песни"
+// // @Param song body entity.Song true "Обновленные данные песни"
+// // @Success 200 {object} entity.Song
+// // @Failure 400 {object} entity.ErrorResponse
+// // @Failure 500 {object} entity.ErrorResponse
+// // @Router /update-song/{id} [put]
+// func (h *Handler) UpdateSong(c *gin.Context) {
+// 	var song entity.Song
 
-	ID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 	ID, err := strconv.Atoi(c.Param("id"))
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-		return
-	}
+// 		return
+// 	}
 
-	if err := c.ShouldBindJSON(&song); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 	if err := c.ShouldBindJSON(&song); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-		return
-	}
+// 		return
+// 	}
 
-	err = sh.service.UpdateSong(&song, ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 	err = h.service.UpdateSong(&song, ID)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
-		return
-	}
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, song)
-}
+// 	c.JSON(http.StatusOK, song)
+// }
 
-func (sh *SongHandler) UpdateFieldSong(c *gin.Context) {
+func (h *Handler) UpdateFieldSong(c *gin.Context) {
 	var song *entity.Song
 
-	ID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	group := c.Query("group")
+	songName := c.Query("song_name")
+
+	if group == "" || songName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "group and song parameters are required"})
 
 		return
 	}
 
-	song, err = sh.service.GetSongByID(ID)
+	song, err := h.service.GetByGroupAndSongName(group, songName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
@@ -205,7 +156,7 @@ func (sh *SongHandler) UpdateFieldSong(c *gin.Context) {
 		return
 	}
 
-	err = sh.service.UpdateFieldSong(UpdateFieldSong, song)
+	err = h.service.UpdateFieldSong(UpdateFieldSong, song)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
@@ -213,10 +164,9 @@ func (sh *SongHandler) UpdateFieldSong(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"update data song": song})
-
 }
 
-// SongHandler godoc
+// Handler godoc
 // @Summary Удалить песню
 // @Description Удаляет запись песни по ID
 // @Tags songs
@@ -226,32 +176,34 @@ func (sh *SongHandler) UpdateFieldSong(c *gin.Context) {
 // @Failure 400 {object} entity.ErrorResponse
 // @Failure 500 {object} entity.ErrorResponse
 // @Router /delete-song/{id} [delete]
-func (sh *SongHandler) DeleteSong(c *gin.Context) {
-	ID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (h *Handler) DeleteSong(c *gin.Context) {
+	group := c.Query("group")
+	songName := c.Query("song_name")
+
+	if group == "" || songName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "group and song parameters are required"})
 
 		return
 	}
 
-	song, err := sh.service.GetSongByID(ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-		return
-	}
-
-	err = sh.service.Delete(ID)
+	song, err := h.service.GetByGroupAndSongName(group, songName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "song deleted", "song": song.Song})
+	err = h.service.Delete(song.SongID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "song deleted", "song": song.SongName, "song_id": song.SongID})
 }
 
-// SongHandler godoc
+// Handler godoc
 // @Summary Получить текст песни
 // @Description Возвращает текст песни с пагинацией
 // @Tags songs
@@ -264,7 +216,7 @@ func (sh *SongHandler) DeleteSong(c *gin.Context) {
 // @Failure 404 {object} entity.ErrorResponse
 // @Failure 500 {object} entity.ErrorResponse
 // @Router /song-text/{id}/text [get]
-func (sh *SongHandler) GetSongText(c *gin.Context) {
+func (h *Handler) GetSongText(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid song ID"})
@@ -281,7 +233,7 @@ func (sh *SongHandler) GetSongText(c *gin.Context) {
 		return
 	}
 
-	text, err := sh.service.GetSongText(id)
+	text, err := h.service.GetSongText(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": "song not found"})
@@ -303,15 +255,16 @@ func (sh *SongHandler) GetSongText(c *gin.Context) {
 		end = totalText
 	}
 
-	// song, _ := sh.service.GetSongByID(id)
+	song, _ := h.service.GetSongByID(id)
 	response := gin.H{
+		"song": song.SongName,
 		"text": text[start:end],
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-// SongHandler godoc
+// Handler godoc
 // @Summary Получить список песен
 // @Description Возвращает список песен с фильтрацией и пагинацией
 // @Tags songs
@@ -327,7 +280,7 @@ func (sh *SongHandler) GetSongText(c *gin.Context) {
 // @Failure 400 {object} entity.ErrorResponse
 // @Failure 500 {object} entity.ErrorResponse
 // @Router /songs-with-filter [get]
-func (sh *SongHandler) GetSongs(c *gin.Context) {
+func (h *Handler) GetSongs(c *gin.Context) {
 	var filter entity.SongFilter
 	var pagination entity.Pagination
 
@@ -343,7 +296,7 @@ func (sh *SongHandler) GetSongs(c *gin.Context) {
 		return
 	}
 
-	if err := sh.validator.Struct(pagination); err != nil {
+	if err := h.validator.Struct(pagination); err != nil {
 		c.JSON(http.StatusBadRequest, entity.ErrorResponse{
 			Error: "Validation error: " + err.Error(),
 		})
@@ -351,7 +304,7 @@ func (sh *SongHandler) GetSongs(c *gin.Context) {
 		return
 	}
 
-	songs, totalItems, err := sh.service.GetAllSongs(filter, pagination)
+	songs, totalItems, err := h.service.GetAllSongs(filter, pagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, entity.ErrorResponse{
 			Error: "Failed to retrieve songs",

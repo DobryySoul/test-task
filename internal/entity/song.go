@@ -1,24 +1,29 @@
 package entity
 
+type Artist struct {
+	ArtistID  int    `json:"artist_id"`
+	GroupName string `json:"group_name"`
+}
+
 // Song model info
 // @Description Информация о песне
 type Song struct {
-	ID          int    `json:"id"`
-	Group       string `json:"group"`
-	Song        string `json:"song"`
-	ReleaseDate string `json:"releaseDate"`
-	Text        string `json:"text"`
+	ArtistID    int    `json:"artist_id"`
+	SongID      int    `json:"song_id"`
+	SongName    string `json:"song_name"`
+	ReleaseDate string `json:"release_date"`
+	SongText    string `json:"song_text"`
 	Link        string `json:"link"`
 }
 
 // CreateSongInput model info
 // @Description Информация о песне после создания
 type CreateSongInput struct {
-	Group       string `json:"group" binding:"required`
-	Song        string `json:"song" binding:"required`
-	ReleaseDate string `json:"releaseDate" binding:"required`
-	Text        string `json:"text" binding:"required`
-	Link        string `json:"link" binding:"required`
+	SongName    string `json:"song_name"`
+	ReleaseDate string `json:"release_date"`
+	SongText    string `json:"song_text"`
+	Link        string `json:"link"`
+	ArtistID    int    `json:"artist_id"`
 }
 
 // UpdateSongInput model info
@@ -43,6 +48,8 @@ type SongsResponse struct {
 // CreateSongResponse model info
 // @Description Ответ с информацией о песне
 type GetSongResponse struct {
+	SongName    string `json:"songName"`
+	Group       string `json:"group"`
 	ReleaseDate string `json:"releaseDate"`
 	Text        string `json:"text"`
 	Link        string `json:"link"`

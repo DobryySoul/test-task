@@ -5,12 +5,12 @@ import (
 	"net/http"
 
 	"github.com/DobryySoul/test-task/config"
-	"github.com/DobryySoul/test-task/internal/http/routes"
+	"github.com/DobryySoul/test-task/internal/http/routes/handlers"
+	"github.com/DobryySoul/test-task/internal/http/routes/router"
 	"github.com/DobryySoul/test-task/internal/repo/postgres"
 	"github.com/DobryySoul/test-task/internal/service"
 	"github.com/DobryySoul/test-task/pkg/logger"
-
-	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 func Run(cfg *config.Config) {
@@ -30,15 +30,14 @@ func Run(cfg *config.Config) {
 
 	log.Info("Connected to database")
 
-	repo := postgres.NewSongRepository(db, log)
+	repo := postgres.NewRepository(db)
 	service := service.NewSongService(repo)
-	h := gin.Default()
-
-	routes.NewRouter(h, service)
+	handler := handlers.NewHandler(service, *validator.New())
+	r := router.NewRouter(handler)
 
 	log.Infof("Starting server on port %s", cfg.Port)
 
-	if err := http.ListenAndServe("localhost:"+cfg.Port, h); err != nil {
+	if err := http.ListenAndServe("localhost:"+cfg.Port, r.Router); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
